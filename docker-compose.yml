@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  # -----------------------------
+  # MinIO (Object Storage)
+  # -----------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000" # API Port
+      - "9001:9001" # Console Port
+    volumes:
+      - minio_data:/data
+    restart: always
+
+  # -----------------------------
+  # Redpanda (Kafka Broker)
+  # -----------------------------
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:latest
+    container_name: redpanda
+    command:
+      - redpanda
+      - start
+      - --smp 1
+      - --overprovisioned
+      - --memory 1G
+      - --reserve-memory 0M
+      - --node-id 0
+      - --check=false
+      # CẤU HÌNH QUAN TRỌNG ĐỂ FIX LỖI KẾT NỐI:
+      # - Internal (bên trong Docker): Chạy port 29092
+      # - External (bên ngoài Host/Python): Chạy port 9092
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - --pandaproxy-addr 0.0.0.0:8082
+      - --advertise-pandaproxy-addr localhost:8082
+    ports:
+      # Map port 9092 của Host vào port 9092 (OUTSIDE) của container
+      # Python script kết nối vào localhost:9092 sẽ hoạt động!
+      - "9092:9092" 
+      - "29092:29092"
+      - "8082:8082"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster info"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  # -----------------------------
+  # Redpanda Console (UI để xem Data)
+  # -----------------------------
+  console:
+    image: docker.redpanda.com/redpandadata/console:latest
+    container_name: console
+    ports:
+      - "8080:8080"
+    environment:
+      # Cấu hình trực tiếp bằng biến môi trường (Không cần file config riêng)
+      KAFKA_BROKERS: "redpanda:29092" # Kết nối qua mạng nội bộ Docker
+      KAFKA_SCHEMAREGISTRY_ENABLED: "false" 
+      CONNECT_ENABLED: "true"
+      CONNECT_CLUSTERS_NAME: "local-connect"
+      CONNECT_CLUSTERS_URL: "http://kafka-connect:8083"
+    depends_on:
+      - redpanda
+    restart: always
+
+  # -----------------------------
+  # Kafka Connect (Để đẩy data sang MinIO sau này)
+  # -----------------------------
+  connect:
+    image: confluentinc/cp-kafka-connect:7.6.0
+    container_name: kafka-connect
+    depends_on:
+      - redpanda
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "redpanda:29092" # Lưu ý: Dùng port nội bộ 29092
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: "connect-cluster"
+      CONNECT_CONFIG_STORAGE_TOPIC: "connect-configs"
+      CONNECT_OFFSET_STORAGE_TOPIC: "connect-offsets"
+      CONNECT_STATUS_STORAGE_TOPIC: "connect-status"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+      # Đường dẫn plugin, nhớ tạo thư mục ./connect-plugins ở ngoài
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/etc/kafka-connect/jars"
+    volumes:
+      - ./connect-plugins:/etc/kafka-connect/jars
+    restart: always
+
+volumes:
+  minio_data:
+  redpanda_data:

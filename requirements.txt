@@ -1,0 +1,11 @@
+pandas
+numpy
+requests
+python-dotenv
+boto3==1.28.0
+kafka-python==2.1.0
+websockets==11.0.3
+pyspark==3.5.1
+pyarrow
+duckdb
+# config spark, install openjdk-17-jdk
