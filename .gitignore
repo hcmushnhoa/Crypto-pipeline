@@ -1,6 +1,5 @@
 venv_linux/
 connect-plugins/
-console-config.yml
 credential/
 spark/
 .env
@@ -19,4 +18,4 @@ __init__
 __pycache__
 .idea/
 .vscode/
-*.duckdb
+CACHEDIR.TAG
