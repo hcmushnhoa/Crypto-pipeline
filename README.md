@@ -2,13 +2,13 @@
 
 ## Overview
 
----
+___
 Dự án là hệ thống data pipeline được xây dựng bằng Apache Airflow kết hợp với kiến trúc phân tán Spark để thu thập, xử lý và lưu trữ dữ liệu tiền điện tử Bitcoin từ sàn giao dịch OKX
 
 
 ## Project Structure
 
----
+___
 ```text
 .
 ├── Dockerfile
@@ -60,7 +60,7 @@ Dự án là hệ thống data pipeline được xây dựng bằng Apache Airfl
 
 ## Features
 
----
+___
 
 - Data ingestion: Request data từ websocket của sàn OKX và chuyển trực tiếp lên Redpanda
 - Distributed Data Storage: Sử dụng hệ thống lưu trữ phân tán tương thích với giao diện S3 của AWS(MinIO)
@@ -69,11 +69,11 @@ Dự án là hệ thống data pipeline được xây dựng bằng Apache Airfl
 - Containerized Deployment: Các thành phần (Apache Airflow, Spark, Redpanda, Minio, DuckDB) được đóng gói bằng Docker và Docker Compose dễ dàng mang đi và sử dụng
 - Automated Workflows: Khả năng tự động khởi tạo hệ thống thu thập, xử lý và lưu trữ data
 
----
+___
 
 ## Prerequisites
 
----
+___
 
 - Docker và Docker Compose
 - Python 3.8+
@@ -82,7 +82,7 @@ Dự án là hệ thống data pipeline được xây dựng bằng Apache Airfl
 
 ## Technical Architecture
 
----
+___
 
 Sử dụng quy trình Extract-Load-Transform(ELT) để xây dựng pipeline theo kiến trúc MEDALLION để cải thiện chất lượng và cấu trúc của data
 - Data collection: Các đoạn code Python (ELT/extract/script/crawl_stream.py và backend/extract/script/crawl.py)
@@ -104,7 +104,7 @@ tương tác với API và Webserver của OKX để truy xuất data của sàn
 
 ## Usage
 
----
+___
 
 1. Truy cập `localhost:9001` để kiểm tra không gian lưu trữ của minio:
 - Thông tin đăng nhập của Minio:
